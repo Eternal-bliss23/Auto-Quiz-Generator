@@ -1,6 +1,6 @@
 # 🔥 Phoenix — AI-Powered Interactive Quiz Generator
 
-**Phoenix** (formerly *QuizCrafter*) turns PDFs, study notes, or any academic text into **engaging, interactive multiple-choice quizzes** with instant score evaluation and detailed answer explanations.
+**Phoenix** turns PDFs, study notes, or any academic text into **engaging, interactive multiple-choice quizzes** with instant score evaluation and detailed answer explanations.
 
 ---
 
