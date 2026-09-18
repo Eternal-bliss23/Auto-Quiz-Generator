@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phoenix AI | Interactive Quiz Generator</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            brand: {
+              50: '#fff7ed',
+              100: '#ffedd5',
+              200: '#fed7aa',
+              500: '#f97316',
+              600: '#ea580c',
+              700: '#c2410c',
+              800: '#9a3412',
+              900: '#7c2d12',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.05);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(100, 116, 139, 0.3);
+      border-radius: 9999px;
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.8; }
+    }
+    .animate-subtle {
+      animation: pulse-subtle 2s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col transition-colors duration-200 dark:bg-slate-950 dark:text-slate-100">
+
+  <!-- Navbar -->
+  <header class="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200 dark:bg-slate-900/80 dark:border-slate-800">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="app.resetToHome()">
+        <img src="/static/logo.jpg" alt="Phoenix" class="w-10 h-10 rounded-xl object-cover shadow-md shadow-brand-500/20">
+        <div>
+          <span class="text-xl font-extrabold tracking-tight bg-gradient-to-r from-brand-600 to-red-600 bg-clip-text text-transparent">Phoenix</span>
+          <span class="text-xs ml-1 px-2 py-0.5 rounded-full font-semibold bg-brand-50 text-brand-700 border border-brand-200 dark:bg-brand-950/60 dark:text-brand-300 dark:border-brand-800">AI 2.0</span>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-3">
+        <!-- Status Indicator -->
+        <div id="healthBadge" class="hidden sm:flex items-center space-x-2 text-xs font-medium px-3 py-1.5 rounded-full bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span>
+          <span id="healthText">Ready (Offline Engine)</span>
+        </div>
+
+        <!-- History Button -->
+        <button onclick="app.openHistoryModal()" title="View Quiz History" class="p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </button>
+
+        <!-- Settings Button -->
+        <button onclick="app.openSettingsModal()" title="AI Engine Settings" class="p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+        </button>
+
+        <!-- Dark mode toggle -->
+        <button onclick="app.toggleDarkMode()" title="Toggle Dark/Light Mode" class="p-2 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+          <span class="dark:hidden">🌙</span>
+          <span class="hidden dark:inline">☀️</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-6 py-8">
+
+    <!-- VIEW 1: CREATION / INPUT FORM -->
+    <section id="viewSetup" class="block space-y-8">
+      <!-- Hero Intro -->
+      <div class="text-center max-w-2xl mx-auto space-y-3">
+        <h1 class="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <span class="bg-gradient-to-r from-brand-600 via-orange-500 to-red-600 bg-clip-text text-transparent">Interactive Quiz</span>
+        </h1>
+        <p class="text-slate-600 dark:text-slate-400 text-sm sm:text-base">
+          Upload PDF lecture notes, paste study materials, or choose a curated topic. Generate instant multiple-choice assessments with detailed answer explanations.
+        </p>
+      </div>
+
+      <!-- Tabbed Source Selection -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <!-- Tabs Header -->
+        <div class="flex border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/50">
+          <button id="tabBtnPdf" onclick="app.switchTab('pdf')" class="flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center space-x-2 border-b-2 border-brand-600 text-brand-600 bg-white dark:bg-slate-900 transition">
+            <span>📄</span>
+            <span>Upload PDF</span>
+          </button>
+          <button id="tabBtnText" onclick="app.switchTab('text')" class="flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center space-x-2 border-b-2 border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition">
+            <span>✍️</span>
+            <span>Paste Notes / Text</span>
+          </button>
+          <button id="tabBtnSamples" onclick="app.switchTab('samples')" class="flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center space-x-2 border-b-2 border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition">
+            <span>💡</span>
+            <span>Sample Topics</span>
+          </button>
+        </div>
+
+        <div class="p-6 sm:p-8 space-y-6">
+          <!-- TAB 1: PDF UPLOAD -->
+          <div id="tabPdfContent" class="block space-y-4">
+            <div id="dropZone" class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-8 text-center hover:border-brand-500 dark:hover:border-brand-500 transition cursor-pointer bg-slate-50/50 dark:bg-slate-800/30">
+              <input type="file" id="pdfFileInput" accept=".pdf" class="hidden" onchange="app.handlePdfSelected(event)">
+              <div class="flex flex-col items-center justify-center space-y-3" onclick="document.getElementById('pdfFileInput').click()">
+                <div class="w-14 h-14 rounded-full bg-brand-50 dark:bg-brand-950 flex items-center justify-center text-brand-600 dark:text-brand-400 text-2xl">
+                  📁
+                </div>
+                <div>
+                  <p class="text-base font-semibold text-slate-800 dark:text-slate-200">
+                    Click to upload or drag & drop PDF document
+                  </p>
+                  <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Supports study guides, textbooks, lecture slides, papers (Max 50MB)</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Uploaded File Summary -->
+            <div id="fileSummaryCard" class="hidden p-4 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between">
+              <div class="flex items-center space-x-3">
+                <span class="text-2xl">📑</span>
+                <div>
+                  <h4 id="summaryFilename" class="text-sm font-bold text-emerald-900 dark:text-emerald-200">document.pdf</h4>
+                  <p id="summaryMeta" class="text-xs text-emerald-700 dark:text-emerald-400">12 pages • 4,200 words extracted</p>
+                </div>
+              </div>
+              <button onclick="app.clearPdf()" class="text-xs text-red-600 hover:text-red-700 dark:text-red-400 font-medium px-2 py-1 rounded hover:bg-red-100 dark:hover:bg-red-950 transition">Remove</button>
+            </div>
+          </div>
+
+          <!-- TAB 2: TEXT INPUT -->
+          <div id="tabTextContent" class="hidden space-y-4">
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-2">Paste Course Notes / Syllabus / Article</label>
+              <textarea id="rawTextInput" rows="7" placeholder="Paste your study materials, lecture excerpts, or textbook paragraphs here..." class="w-full p-4 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm leading-relaxed"></textarea>
+            </div>
+          </div>
+
+          <!-- TAB 3: SAMPLE TOPICS -->
+          <div id="tabSamplesContent" class="hidden space-y-4">
+            <p class="text-xs font-medium text-slate-500 dark:text-slate-400">Select any curated topic to test the quiz engine instantly:</p>
+            <div id="sampleTopicsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <!-- Dynamically populated -->
+            </div>
+          </div>
+
+          <!-- Customization Options -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+            <!-- Number of Questions -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Question Count</label>
+              <select id="questionCountSelect" class="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-brand-500 focus:outline-none text-sm">
+                <option value="3">3 Questions (Quick Sprint)</option>
+                <option value="5" selected>5 Questions (Standard)</option>
+                <option value="10">10 Questions (Comprehensive)</option>
+                <option value="15">15 Questions (Full Exam)</option>
+              </select>
+            </div>
+
+            <!-- Difficulty Level -->
+            <div>
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1.5">Difficulty</label>
+              <div class="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                <button type="button" onclick="app.setDifficulty('Easy')" id="diffBtnEasy" class="py-1.5 text-xs font-bold rounded-lg transition text-slate-600 dark:text-slate-300 hover:text-slate-900">Easy</button>
+                <button type="button" onclick="app.setDifficulty('Medium')" id="diffBtnMedium" class="py-1.5 text-xs font-bold rounded-lg transition bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-300 shadow-sm">Medium</button>
+                <button type="button" onclick="app.setDifficulty('Hard')" id="diffBtnHard" class="py-1.5 text-xs font-bold rounded-lg transition text-slate-600 dark:text-slate-300 hover:text-slate-900">Hard</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Provider Select & Generate Action -->
+          <div class="flex flex-col sm:flex-row items-center justify-between pt-4 gap-4">
+            <div class="flex items-center space-x-2 text-xs text-slate-500 dark:text-slate-400">
+              <span class="font-semibold">AI Generator:</span>
+              <select id="providerSelect" class="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 text-xs">
+                <option value="auto">Auto (Smart Fallback)</option>
+                <option value="offline">Offline NLP (Zero Setup)</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="ollama">Local Ollama</option>
+                <option value="openai">OpenAI / Compatible</option>
+              </select>
+            </div>
+
+            <button id="generateBtn" onclick="app.generateQuiz()" class="w-full sm:w-auto px-8 py-3.5 rounded-xl bg-gradient-to-r from-brand-600 to-orange-600 hover:from-brand-700 hover:to-orange-700 text-white font-bold text-sm shadow-lg shadow-brand-500/25 flex items-center justify-center space-x-2 transition transform active:scale-95 disabled:opacity-50">
+              <span id="genBtnIcon">✨</span>
+              <span id="genBtnText">Generate Interactive Quiz</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: ACTIVE QUIZ PLAYER -->
+    <section id="viewQuiz" class="hidden space-y-6">
+      <!-- Quiz Header with Timer & Progress -->
+      <div class="bg-white dark:bg-slate-900 p-4 sm:p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span id="quizBadgeTopic" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-50 text-brand-700 dark:bg-brand-950 dark:text-brand-300 border border-brand-200 dark:border-brand-800">Topic</span>
+            <span id="quizBadgeDiff" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300 border border-amber-200 dark:border-amber-800">Medium</span>
+          </div>
+          <h2 id="quizTitleText" class="text-xl font-bold text-slate-900 dark:text-white mt-1">Machine Learning Quiz</h2>
+        </div>
+
+        <div class="flex items-center space-x-4">
+          <!-- Timer Display -->
+          <div class="flex items-center space-x-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 font-mono text-sm font-bold text-slate-700 dark:text-slate-300">
+            <span>⏱️</span>
+            <span id="quizTimerText">00:00</span>
+          </div>
+
+          <!-- Quit / Reset -->
+          <button onclick="app.confirmExitQuiz()" class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 transition">
+            Exit
+          </button>
+        </div>
+      </div>
+
+      <!-- Question Jump Navigation Bubble Grid -->
+      <div id="questionBubblesContainer" class="flex flex-wrap items-center gap-2">
+        <!-- Dynamically generated dots -->
+      </div>
+
+      <!-- Active Question Card -->
+      <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-md border border-slate-200 dark:border-slate-800 p-6 sm:p-8 space-y-6">
+        <!-- Question Count & Prompt -->
+        <div class="space-y-2">
+          <div class="text-xs font-bold uppercase tracking-wider text-brand-600 dark:text-brand-400">
+            Question <span id="currentQIndexLabel">1</span> of <span id="totalQLabel">5</span>
+          </div>
+          <h3 id="currentQuestionText" class="text-lg sm:text-xl font-bold text-slate-900 dark:text-white leading-snug">
+            Question prompt loading...
+          </h3>
+        </div>
+
+        <!-- Options Grid -->
+        <div id="optionsContainer" class="space-y-3">
+          <!-- Options dynamically rendered here -->
+        </div>
+
+        <!-- Navigation Buttons -->
+        <div class="flex items-center justify-between pt-4 border-t border-slate-100 dark:border-slate-800">
+          <button id="btnPrevQ" onclick="app.prevQuestion()" class="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition disabled:opacity-40">
+            ← Previous
+          </button>
+
+          <div class="flex items-center space-x-3">
+            <button id="btnNextQ" onclick="app.nextQuestion()" class="px-6 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold shadow-md shadow-brand-500/20 transition">
+              Next Question →
+            </button>
+            <button id="btnSubmitQuiz" onclick="app.submitQuiz()" class="hidden px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold shadow-md shadow-emerald-500/20 transition">
+              Submit Quiz 🏁
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 3: RESULTS & REVIEW DASHBOARD -->
+    <section id="viewResults" class="hidden space-y-8">
+      <!-- Score Overview Card -->
+      <div class="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-lg border border-slate-200 dark:border-slate-800 text-center relative overflow-hidden">
+        <div class="max-w-md mx-auto space-y-4">
+          <div id="scoreBadgeIcon" class="w-16 h-16 mx-auto rounded-full bg-emerald-100 dark:bg-emerald-950 flex items-center justify-center text-3xl">
+            🏆
+          </div>
+          <h2 id="scoreTitleText" class="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">Outstanding Work!</h2>
+          <p id="scoreSubtitleText" class="text-sm text-slate-600 dark:text-slate-400">You demonstrated strong comprehension of the material.</p>
+
+          <!-- Big Score Stats -->
+          <div class="grid grid-cols-3 gap-3 py-4 border-y border-slate-200 dark:border-slate-800">
+            <div>
+              <div id="resScoreText" class="text-2xl font-black text-brand-600 dark:text-brand-400">5 / 5</div>
+              <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Final Score</div>
+            </div>
+            <div>
+              <div id="resPctText" class="text-2xl font-black text-emerald-600 dark:text-emerald-400">100%</div>
+              <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Accuracy</div>
+            </div>
+            <div>
+              <div id="resTimeText" class="text-2xl font-black text-slate-700 dark:text-slate-300">01:45</div>
+              <div class="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">Time Taken</div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex flex-wrap items-center justify-center gap-3 pt-2">
+            <button onclick="app.retakeQuiz()" class="px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold text-xs shadow-md transition">
+              🔄 Retake Quiz
+            </button>
+            <button onclick="app.exportQuiz('markdown')" class="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition">
+              📥 Export Markdown
+            </button>
+            <button onclick="app.resetToHome()" class="px-5 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 font-bold text-xs transition">
+              ← Back
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Comprehensive Review List -->
+      <div class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-bold text-slate-900 dark:text-white">Question Review & Explanations</h3>
+          <div class="flex items-center space-x-1.5 text-xs">
+            <button onclick="app.filterReview('all')" id="filterAllBtn" class="px-3 py-1 rounded-lg font-semibold bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300">All</button>
+            <button onclick="app.filterReview('correct')" id="filterCorrectBtn" class="px-3 py-1 rounded-lg font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100">Correct</button>
+            <button onclick="app.filterReview('incorrect')" id="filterIncorrectBtn" class="px-3 py-1 rounded-lg font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100">Mistakes</button>
+          </div>
+        </div>
+
+        <div id="reviewCardsList" class="space-y-4">
+          <!-- Dynamically populated review questions -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- SETTINGS MODAL -->
+  <div id="settingsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-md rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-5">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+          <span>⚙️</span>
+          <span>AI Engine Settings</span>
+        </h3>
+        <button onclick="app.closeSettingsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold">×</button>
+      </div>
+
+      <div class="space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Local Ollama URL</label>
+          <input type="text" id="settingOllamaUrl" placeholder="http://localhost:11434" class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+          <p class="text-slate-400 mt-1">Default: http://localhost:11434 (Supports llama3.2, mistral, gemma)</p>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">Google Gemini API Key (Optional)</label>
+          <input type="password" id="settingGeminiKey" placeholder="AIzaSy..." class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+          <p class="text-slate-400 mt-1">Enables Gemini 1.5/2.0 Flash for lightning-fast quiz generation.</p>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 dark:text-slate-300 mb-1">OpenAI API Key (Optional)</label>
+          <input type="password" id="settingOpenaiKey" placeholder="sk-..." class="w-full px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+          <p class="text-slate-400 mt-1">Enables OpenAI gpt-4o-mini or compatible endpoints.</p>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-end space-x-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+        <button onclick="app.closeSettingsModal()" class="px-4 py-2 text-xs font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300">Cancel</button>
+        <button onclick="app.saveSettings()" class="px-4 py-2 text-xs font-bold rounded-lg bg-brand-600 hover:bg-brand-700 text-white">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY MODAL -->
+  <div id="historyModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center space-x-2">
+          <span>📜</span>
+          <span>Recent Quiz Sessions</span>
+        </h3>
+        <button onclick="app.closeHistoryModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xl font-bold">×</button>
+      </div>
+
+      <div id="historyListContainer" class="max-h-80 overflow-y-auto custom-scrollbar space-y-2 text-xs">
+        <!-- Populated dynamically -->
+      </div>
+
+      <div class="flex justify-end pt-2 border-t border-slate-200 dark:border-slate-800">
+        <button onclick="app.closeHistoryModal()" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="fixed bottom-6 right-6 z-50 hidden px-4 py-3 rounded-xl shadow-xl border text-sm font-medium transition transform duration-300">
+    <span id="toastMessage">Notification</span>
+  </div>
+
+  <!-- Main JavaScript Application Logic -->
+  <script>
+    const API_BASE = window.location.origin;
+
+    const app = {
+      state: {
+        activeTab: 'pdf',
+        difficulty: 'Medium',
+        uploadedFile: null,
+        extractedText: '',
+        topic: 'General Knowledge',
+        sampleTopics: [],
+        quizData: null,
+        currentQuestionIndex: 0,
+        userAnswers: {},  // question_id -> letter
+        timerInterval: null,
+        secondsElapsed: 0,
+        settings: {
+          ollamaUrl: localStorage.getItem('qc_ollama_url') || 'http://localhost:11434',
+          geminiKey: localStorage.getItem('qc_gemini_key') || '',
+          openaiKey: localStorage.getItem('qc_openai_key') || ''
+        }
+      },
+
+      init: async () => {
+        app.loadTheme();
+        await app.checkHealth();
+        await app.loadSampleTopics();
+        app.setupDragDrop();
+      },
+
+      checkHealth: async () => {
+        try {
+          const res = await fetch(`${API_BASE}/api/health`);
+          if (res.ok) {
+            const data = await res.json();
+            const badge = document.getElementById('healthBadge');
+            const txt = document.getElementById('healthText');
+            badge.classList.remove('hidden');
+            if (data.providers.ollama.available) {
+              txt.innerText = "Ollama Active";
+            } else if (data.providers.gemini.available) {
+              txt.innerText = "Gemini Active";
+            } else {
+              txt.innerText = "Offline Engine (Ready)";
+            }
+          }
+        } catch (e) {
+          console.warn("Health check error:", e);
+        }
+      },
+
+      loadSampleTopics: async () => {
+        try {
+          const res = await fetch(`${API_BASE}/api/sample-topics`);
+          if (res.ok) {
+            app.state.sampleTopics = await res.json();
+            app.renderSampleTopics();
+          }
+        } catch (e) {
+          console.error("Failed to load sample topics", e);
+        }
+      },
+
+      renderSampleTopics: () => {
+        const grid = document.getElementById('sampleTopicsGrid');
+        grid.innerHTML = app.state.sampleTopics.map(t => `
+          <div onclick="app.selectSampleTopic('${t.id}')" class="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-brand-500 dark:hover:border-brand-500 bg-slate-50/50 dark:bg-slate-800/40 cursor-pointer transition flex flex-col justify-between">
+            <div>
+              <span class="text-xs font-semibold px-2 py-0.5 rounded bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400">${t.category}</span>
+              <h4 class="font-bold text-sm text-slate-900 dark:text-white mt-2">${t.title}</h4>
+              <p class="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">${t.description}</p>
+            </div>
+            <div class="mt-3 text-xs font-bold text-brand-600 dark:text-brand-400 flex items-center space-x-1">
+              <span>Use topic</span>
+              <span>→</span>
+            </div>
+          </div>
+        `).join('');
+      },
+
+      selectSampleTopic: (id) => {
+        const topic = app.state.sampleTopics.find(t => t.id === id);
+        if (topic) {
+          app.state.topic = topic.title;
+          app.state.extractedText = topic.text;
+          app.showToast(`Selected "${topic.title}"! Click Generate Quiz.`);
+        }
+      },
+
+      switchTab: (tab) => {
+        app.state.activeTab = tab;
+        ['pdf', 'text', 'samples'].forEach(t => {
+          const btn = document.getElementById(`tabBtn${t.charAt(0).toUpperCase() + t.slice(1)}`);
+          const content = document.getElementById(`tab${t.charAt(0).toUpperCase() + t.slice(1)}Content`);
+          if (t === tab) {
+            btn.className = "flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center space-x-2 border-b-2 border-brand-600 text-brand-600 bg-white dark:bg-slate-900 transition";
+            content.classList.remove('hidden');
+          } else {
+            btn.className = "flex-1 py-4 px-4 text-sm font-semibold flex items-center justify-center space-x-2 border-b-2 border-transparent text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 transition";
+            content.classList.add('hidden');
+          }
+        });
+      },
+
+      setDifficulty: (level) => {
+        app.state.difficulty = level;
+        ['Easy', 'Medium', 'Hard'].forEach(l => {
+          const btn = document.getElementById(`diffBtn${l}`);
+          if (l === level) {
+            btn.className = "py-1.5 text-xs font-bold rounded-lg transition bg-white dark:bg-slate-700 text-brand-600 dark:text-brand-300 shadow-sm";
+          } else {
+            btn.className = "py-1.5 text-xs font-bold rounded-lg transition text-slate-600 dark:text-slate-300 hover:text-slate-900";
+          }
+        });
+      },
+
+      setupDragDrop: () => {
+        const zone = document.getElementById('dropZone');
+        ['dragenter', 'dragover'].forEach(e => {
+          zone.addEventListener(e, (evt) => {
+            evt.preventDefault();
+            zone.classList.add('border-brand-500', 'bg-brand-50/20');
+          });
+        });
+        ['dragleave', 'drop'].forEach(e => {
+          zone.addEventListener(e, (evt) => {
+            evt.preventDefault();
+            zone.classList.remove('border-brand-500', 'bg-brand-50/20');
+          });
+        });
+        zone.addEventListener('drop', (evt) => {
+          if (evt.dataTransfer.files.length) {
+            app.processPdfUpload(evt.dataTransfer.files[0]);
+          }
+        });
+      },
+
+      handlePdfSelected: (e) => {
+        if (e.target.files.length) {
+          app.processPdfUpload(e.target.files[0]);
+        }
+      },
+
+      processPdfUpload: async (file) => {
+        if (!file.name.toLowerCase().endsWith('.pdf')) {
+          app.showToast("Please select a valid PDF file.", "error");
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        app.showToast("Extracting text from PDF...", "info");
+
+        try {
+          const res = await fetch(`${API_BASE}/api/upload`, {
+            method: 'POST',
+            body: formData
+          });
+
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || "Upload failed");
+          }
+
+          const data = await res.json();
+          app.state.uploadedFile = file;
+          app.state.extractedText = data.extracted_text;
+
+          document.getElementById('summaryFilename').innerText = data.filename;
+          document.getElementById('summaryMeta').innerText = `${data.page_count} pages • ~${data.word_count.toLocaleString()} words extracted`;
+          document.getElementById('fileSummaryCard').classList.remove('hidden');
+
+          // Derive topic from filename
+          app.state.topic = data.filename.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+
+          app.showToast(`Extracted ${data.page_count} pages successfully!`);
+        } catch (e) {
+          app.showToast(e.message, "error");
+        }
+      },
+
+      clearPdf: () => {
+        app.state.uploadedFile = null;
+        app.state.extractedText = '';
+        document.getElementById('pdfFileInput').value = '';
+        document.getElementById('fileSummaryCard').classList.add('hidden');
+      },
+
+      generateQuiz: async () => {
+        let content = "";
+        if (app.state.activeTab === 'pdf') {
+          content = app.state.extractedText;
+          if (!content) {
+            app.showToast("Please upload a PDF document first.", "error");
+            return;
+          }
+        } else if (app.state.activeTab === 'text') {
+          content = document.getElementById('rawTextInput').value.trim();
+          if (!content) {
+            app.showToast("Please paste some text or notes.", "error");
+            return;
+          }
+        } else {
+          content = app.state.extractedText;
+        }
+
+        const topic = app.state.topic || "General Knowledge";
+        const numQuestions = parseInt(document.getElementById('questionCountSelect').value);
+        const provider = document.getElementById('providerSelect').value;
+
+        // UI Loading state
+        const btn = document.getElementById('generateBtn');
+        const icon = document.getElementById('genBtnIcon');
+        const text = document.getElementById('genBtnText');
+        btn.disabled = true;
+        icon.innerText = "⏳";
+        text.innerText = "Generating Quiz Questions...";
+
+        try {
+          const payload = {
+            topic: topic,
+            content: content,
+            num_questions: numQuestions,
+            difficulty: app.state.difficulty,
+            provider: provider,
+            api_key: provider === 'gemini' ? app.state.settings.geminiKey : (provider === 'openai' ? app.state.settings.openaiKey : null),
+            ollama_url: app.state.settings.ollamaUrl
+          };
+
+          const res = await fetch(`${API_BASE}/api/generate`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.detail || "Failed to generate quiz");
+          }
+
+          const quizResult = await res.json();
+          app.startQuiz(quizResult);
+        } catch (e) {
+          app.showToast(e.message, "error");
+        } finally {
+          btn.disabled = false;
+          icon.innerText = "✨";
+          text.innerText = "Generate Interactive Quiz";
+        }
+      },
+
+      startQuiz: (quizResult) => {
+        app.state.quizData = quizResult;
+        app.state.currentQuestionIndex = 0;
+        app.state.userAnswers = {};
+        app.state.secondsElapsed = 0;
+
+        // Header info
+        document.getElementById('quizBadgeTopic').innerText = quizResult.topic;
+        document.getElementById('quizBadgeDiff').innerText = quizResult.difficulty;
+        document.getElementById('quizTitleText').innerText = quizResult.title;
+
+        // Timer
+        if (app.state.timerInterval) clearInterval(app.state.timerInterval);
+        app.state.timerInterval = setInterval(() => {
+          app.state.secondsElapsed++;
+          const mins = String(Math.floor(app.state.secondsElapsed / 60)).padStart(2, '0');
+          const secs = String(app.state.secondsElapsed % 60).padStart(2, '0');
+          document.getElementById('quizTimerText').innerText = `${mins}:${secs}`;
+        }, 1000);
+
+        // Switch Views
+        document.getElementById('viewSetup').classList.add('hidden');
+        document.getElementById('viewResults').classList.add('hidden');
+        document.getElementById('viewQuiz').classList.remove('hidden');
+
+        app.renderQuestionBubbles();
+        app.renderActiveQuestion();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+
+      renderQuestionBubbles: () => {
+        const container = document.getElementById('questionBubblesContainer');
+        const questions = app.state.quizData.questions;
+        container.innerHTML = questions.map((q, idx) => {
+          const isAnswered = app.state.userAnswers[q.id] !== undefined;
+          const isCurrent = idx === app.state.currentQuestionIndex;
+          let styleClass = "border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300";
+          if (isCurrent) {
+            styleClass = "bg-brand-600 text-white font-bold ring-2 ring-brand-500/40";
+          } else if (isAnswered) {
+            styleClass = "bg-brand-50 dark:bg-brand-950 text-brand-600 dark:text-brand-400 font-semibold border-brand-300 dark:border-brand-700";
+          }
+
+          return `
+            <button onclick="app.jumpToQuestion(${idx})" class="w-8 h-8 rounded-lg text-xs flex items-center justify-center transition ${styleClass}">
+              ${idx + 1}
+            </button>
+          `;
+        }).join('');
+      },
+
+      renderActiveQuestion: () => {
+        const questions = app.state.quizData.questions;
+        const q = questions[app.state.currentQuestionIndex];
+        const total = questions.length;
+
+        document.getElementById('currentQIndexLabel').innerText = app.state.currentQuestionIndex + 1;
+        document.getElementById('totalQLabel').innerText = total;
+        document.getElementById('currentQuestionText').innerText = q.question;
+
+        // Render options
+        const container = document.getElementById('optionsContainer');
+        const selectedLetter = app.state.userAnswers[q.id];
+
+        container.innerHTML = q.options.map(opt => {
+          const letter = opt.substring(0, 1);
+          const isSelected = selectedLetter === letter;
+
+          let cardClass = "border-slate-200 dark:border-slate-700 hover:border-brand-400 dark:hover:border-brand-500 bg-slate-50/50 dark:bg-slate-800/40";
+          let badgeClass = "bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200";
+
+          if (isSelected) {
+            cardClass = "border-brand-600 bg-brand-50/70 dark:bg-brand-950/60 dark:border-brand-600 shadow-sm";
+            badgeClass = "bg-brand-600 text-white";
+          }
+
+          return `
+            <div onclick="app.selectAnswer(${q.id}, '${letter}')" class="p-4 rounded-xl border-2 ${cardClass} cursor-pointer transition flex items-center space-x-3">
+              <span class="w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center ${badgeClass} shrink-0">${letter}</span>
+              <span class="text-sm font-medium text-slate-800 dark:text-slate-100">${opt.replace(/^[A-D]\)\s*/, '')}</span>
+            </div>
+          `;
+        }).join('');
+
+        // Navigation buttons
+        document.getElementById('btnPrevQ').disabled = app.state.currentQuestionIndex === 0;
+        const isLast = app.state.currentQuestionIndex === total - 1;
+        document.getElementById('btnNextQ').classList.toggle('hidden', isLast);
+        document.getElementById('btnSubmitQuiz').classList.toggle('hidden', !isLast);
+
+        app.renderQuestionBubbles();
+      },
+
+      selectAnswer: (questionId, letter) => {
+        app.state.userAnswers[questionId] = letter;
+        app.renderActiveQuestion();
+      },
+
+      jumpToQuestion: (idx) => {
+        app.state.currentQuestionIndex = idx;
+        app.renderActiveQuestion();
+      },
+
+      prevQuestion: () => {
+        if (app.state.currentQuestionIndex > 0) {
+          app.state.currentQuestionIndex--;
+          app.renderActiveQuestion();
+        }
+      },
+
+      nextQuestion: () => {
+        if (app.state.currentQuestionIndex < app.state.quizData.questions.length - 1) {
+          app.state.currentQuestionIndex++;
+          app.renderActiveQuestion();
+        }
+      },
+
+      submitQuiz: async () => {
+        if (app.state.timerInterval) clearInterval(app.state.timerInterval);
+
+        const questions = app.state.quizData.questions;
+        let score = 0;
+        questions.forEach(q => {
+          const userChoice = app.state.userAnswers[q.id];
+          if (userChoice && userChoice.toUpperCase() === q.correct_answer.toUpperCase()) {
+            score++;
+          }
+        });
+
+        const total = questions.length;
+        const pct = Math.round((score / total) * 100);
+
+        // Update Results UI
+        document.getElementById('resScoreText').innerText = `${score} / ${total}`;
+        document.getElementById('resPctText').innerText = `${pct}%`;
+
+        const mins = String(Math.floor(app.state.secondsElapsed / 60)).padStart(2, '0');
+        const secs = String(app.state.secondsElapsed % 60).padStart(2, '0');
+        document.getElementById('resTimeText').innerText = `${mins}:${secs}`;
+
+        if (pct >= 90) {
+          document.getElementById('scoreBadgeIcon').innerText = "🏆";
+          document.getElementById('scoreTitleText').innerText = "Mastery Achieved!";
+          document.getElementById('scoreSubtitleText').innerText = "Outstanding retention and in-depth conceptual grasp.";
+        } else if (pct >= 70) {
+          document.getElementById('scoreBadgeIcon').innerText = "🌟";
+          document.getElementById('scoreTitleText').innerText = "Great Job!";
+          document.getElementById('scoreSubtitleText').innerText = "Solid understanding of core principles.";
+        } else {
+          document.getElementById('scoreBadgeIcon').innerText = "📚";
+          document.getElementById('scoreTitleText').innerText = "Keep Practicing!";
+          document.getElementById('scoreSubtitleText').innerText = "Review the explanations below to reinforce your knowledge.";
+        }
+
+        app.renderReviewList('all');
+
+        // Persist to server history
+        try {
+          await fetch(`${API_BASE}/api/save-result`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              quiz_id: app.state.quizData.quiz_id,
+              topic: app.state.quizData.topic,
+              score: score,
+              total_questions: total,
+              percentage: pct,
+              answers: app.state.userAnswers,
+              time_spent_seconds: app.state.secondsElapsed
+            })
+          });
+        } catch (e) {
+          console.warn("Could not save history:", e);
+        }
+
+        // Switch to Results View
+        document.getElementById('viewQuiz').classList.add('hidden');
+        document.getElementById('viewResults').classList.remove('hidden');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      },
+
+      renderReviewList: (filter) => {
+        const container = document.getElementById('reviewCardsList');
+        const questions = app.state.quizData.questions;
+
+        const filtered = questions.filter(q => {
+          const userChoice = app.state.userAnswers[q.id];
+          const isCorrect = userChoice && userChoice.toUpperCase() === q.correct_answer.toUpperCase();
+          if (filter === 'correct') return isCorrect;
+          if (filter === 'incorrect') return !isCorrect;
+          return true;
+        });
+
+        if (filtered.length === 0) {
+          container.innerHTML = `<div class="p-6 text-center text-sm text-slate-500">No questions in this filter.</div>`;
+          return;
+        }
+
+        container.innerHTML = filtered.map((q, idx) => {
+          const userChoice = app.state.userAnswers[q.id];
+          const isCorrect = userChoice && userChoice.toUpperCase() === q.correct_answer.toUpperCase();
+          const borderClass = isCorrect ? "border-emerald-200 dark:border-emerald-900 bg-emerald-50/20" : "border-rose-200 dark:border-rose-900 bg-rose-50/20";
+
+          return `
+            <div class="p-6 rounded-2xl border ${borderClass} bg-white dark:bg-slate-900 shadow-sm space-y-4">
+              <div class="flex items-start justify-between">
+                <h4 class="font-bold text-sm text-slate-900 dark:text-white">
+                  <span class="text-brand-600 mr-1.5">Q${q.id}.</span>${q.question}
+                </h4>
+                <span class="text-xs px-2.5 py-1 rounded-full font-bold ${isCorrect ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'} shrink-0 ml-2">
+                  ${isCorrect ? '✓ Correct' : '✗ Incorrect'}
+                </span>
+              </div>
+
+              <div class="space-y-2">
+                ${q.options.map(opt => {
+                  const letter = opt.substring(0, 1);
+                  const isUser = userChoice === letter;
+                  const isRight = q.correct_answer.toUpperCase() === letter;
+
+                  let optClass = "border-slate-200 dark:border-slate-700 bg-slate-50/40 dark:bg-slate-800/40";
+                  if (isRight) optClass = "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-200 font-semibold";
+                  else if (isUser) optClass = "border-rose-500 bg-rose-50 dark:bg-rose-950/60 text-rose-900 dark:text-rose-200";
+
+                  return `
+                    <div class="px-4 py-2.5 rounded-xl border text-xs flex items-center justify-between ${optClass}">
+                      <span>${opt}</span>
+                      <span>${isRight ? '★ Correct Answer' : (isUser ? 'Your Answer' : '')}</span>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+
+              <button onclick="app.toggleExplanation('${q.id}')" class="w-full text-left px-4 py-2.5 rounded-xl bg-amber-100 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 text-xs font-bold transition hover:bg-amber-200 dark:hover:bg-amber-900">
+                💡 Show Hint
+              </button>
+              <div id="explanation-${q.id}" class="hidden p-3.5 rounded-xl bg-slate-100/70 dark:bg-slate-800/70 text-xs text-slate-700 dark:text-slate-300 space-y-1">
+                <div class="font-bold text-slate-900 dark:text-white">Explanation:</div>
+                <p>${q.explanation || 'No explanation provided.'}</p>
+              </div>
+            </div>
+          `;
+        }).join('');
+      },
+
+      filterReview: (filter) => {
+        ['all', 'correct', 'incorrect'].forEach(f => {
+          const btn = document.getElementById(`filter${f.charAt(0).toUpperCase() + f.slice(1)}Btn`);
+          if (f === filter) {
+            btn.className = "px-3 py-1 rounded-lg font-semibold bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300";
+          } else {
+            btn.className = "px-3 py-1 rounded-lg font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800";
+          }
+        });
+        app.renderReviewList(filter);
+      },
+
+      toggleExplanation: (id) => {
+        const el = document.getElementById('explanation-' + id);
+        if (el) el.classList.toggle('hidden');
+      },
+
+      retakeQuiz: () => {
+        app.startQuiz(app.state.quizData);
+      },
+
+      resetToHome: () => {
+        if (app.state.timerInterval) clearInterval(app.state.timerInterval);
+        document.getElementById('viewQuiz').classList.add('hidden');
+        document.getElementById('viewResults').classList.add('hidden');
+        document.getElementById('viewSetup').classList.remove('hidden');
+      },
+
+      confirmExitQuiz: () => {
+        if (confirm("Are you sure you want to exit this quiz session?")) {
+          app.resetToHome();
+        }
+      },
+
+      exportQuiz: async (format) => {
+        try {
+          const qData = app.state.quizData;
+          let score = 0;
+          qData.questions.forEach(q => {
+            if (app.state.userAnswers[q.id] === q.correct_answer) score++;
+          });
+
+          const res = await fetch(`${API_BASE}/api/export`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: qData.title,
+              topic: qData.topic,
+              difficulty: qData.difficulty,
+              score: score,
+              total: qData.questions.length,
+              questions: qData.questions,
+              user_answers: app.state.userAnswers
+            })
+          });
+
+          if (!res.ok) throw new Error("Export failed");
+          const data = await res.json();
+
+          const blob = new Blob([data.markdown], { type: 'text/markdown' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `${qData.topic.toLowerCase().replace(/\s+/g, '_')}_quiz.md`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          app.showToast("Exported quiz report successfully!");
+        } catch (e) {
+          app.showToast("Failed to export quiz: " + e.message, "error");
+        }
+      },
+
+      openSettingsModal: () => {
+        document.getElementById('settingOllamaUrl').value = app.state.settings.ollamaUrl;
+        document.getElementById('settingGeminiKey').value = app.state.settings.geminiKey;
+        document.getElementById('settingOpenaiKey').value = app.state.settings.openaiKey;
+        document.getElementById('settingsModal').classList.remove('hidden');
+      },
+
+      closeSettingsModal: () => {
+        document.getElementById('settingsModal').classList.add('hidden');
+      },
+
+      saveSettings: () => {
+        const ollama = document.getElementById('settingOllamaUrl').value.trim() || 'http://localhost:11434';
+        const gemini = document.getElementById('settingGeminiKey').value.trim();
+        const openai = document.getElementById('settingOpenaiKey').value.trim();
+
+        app.state.settings.ollamaUrl = ollama;
+        app.state.settings.geminiKey = gemini;
+        app.state.settings.openaiKey = openai;
+
+        localStorage.setItem('qc_ollama_url', ollama);
+        localStorage.setItem('qc_gemini_key', gemini);
+        localStorage.setItem('qc_openai_key', openai);
+
+        app.closeSettingsModal();
+        app.showToast("Settings updated successfully!");
+        app.checkHealth();
+      },
+
+      openHistoryModal: async () => {
+        const modal = document.getElementById('historyModal');
+        const container = document.getElementById('historyListContainer');
+        modal.classList.remove('hidden');
+        container.innerHTML = `<div class="text-center py-6 text-slate-500">Loading history...</div>`;
+
+        try {
+          const res = await fetch(`${API_BASE}/api/history`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data.length === 0) {
+              container.innerHTML = `<div class="text-center py-6 text-slate-500">No previous quizzes taken yet.</div>`;
+              return;
+            }
+            container.innerHTML = data.map(item => `
+              <div class="p-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 flex items-center justify-between">
+                <div>
+                  <h5 class="font-bold text-slate-800 dark:text-slate-100">${item.topic}</h5>
+                  <p class="text-slate-500 text-xs">Score: ${item.score}/${item.total_questions} (${item.percentage}%)</p>
+                </div>
+                <span class="text-xs px-2 py-1 rounded font-bold ${item.percentage >= 70 ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}">
+                  ${item.percentage}%
+                </span>
+              </div>
+            `).join('');
+          }
+        } catch (e) {
+          container.innerHTML = `<div class="text-center py-6 text-red-500">Failed to load history</div>`;
+        }
+      },
+
+      closeHistoryModal: () => {
+        document.getElementById('historyModal').classList.add('hidden');
+      },
+
+      toggleDarkMode: () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('qc_theme', isDark ? 'dark' : 'light');
+      },
+
+      loadTheme: () => {
+        const saved = localStorage.getItem('qc_theme');
+        if (saved === 'dark' || (!saved && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      },
+
+      showToast: (msg, type = "success") => {
+        const toast = document.getElementById('toast');
+        const text = document.getElementById('toastMessage');
+        text.innerText = msg;
+        toast.className = `fixed bottom-6 right-6 z-50 px-4 py-3 rounded-xl shadow-xl border text-sm font-medium transition transform duration-300 ${
+          type === "error" ? "bg-red-600 text-white border-red-700" :
+          type === "info" ? "bg-slate-800 text-white border-slate-700" :
+          "bg-emerald-600 text-white border-emerald-700"
+        }`;
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 3500);
+      }
+    };
+
+    // Initialize application on load
+    window.addEventListener('DOMContentLoaded', app.init);
+  </script>
+</body>
+</html>
